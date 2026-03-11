@@ -9,8 +9,12 @@ namespace Chunk.Player.Abilities
     public class MovementAbility : MonoBehaviour
     {
         private const float MoveSpeed = 5f;
-        private const float JumpForce = 10f;
+        private const float JumpForce = 8f;
         private const float GroundCheckRadius = 0.1f;
+
+        // Minimum downward speed before the player is considered grounded.
+        // Prevents a side-collision with ground tiles from being treated as landing.
+        private const float GroundedVelocityThreshold = 0.5f;
 
         [SerializeField] private Transform groundCheck;
         [SerializeField] private LayerMask groundLayer;
@@ -61,12 +65,17 @@ namespace Chunk.Player.Abilities
             // Rebuild filter each FixedUpdate in case groundLayer changes in Inspector.
             _groundFilter.layerMask = groundLayer;
 
-            _isGrounded = groundCheck != null &&
-                          Physics2D.OverlapCircle(groundCheck.position, GroundCheckRadius, _groundFilter.layerMask);
+            bool overlapHit = groundCheck != null &&
+                              Physics2D.OverlapCircle(groundCheck.position, GroundCheckRadius, _groundFilter.layerMask);
 
-            if (_isGrounded && _rb.linearVelocity.y <= 0.01f)
+            // Only treat an overlap as grounded when the player is moving downward (or still).
+            // This prevents a side-collision with a ground tile from locking the player in mid-air.
+            _isGrounded = overlapHit && _rb.linearVelocity.y <= GroundedVelocityThreshold;
+
+            if (_isGrounded)
                 _canJump = true;
 
+            // Only overwrite the horizontal component — let physics own the vertical velocity.
             _rb.linearVelocity = new Vector2(_moveDirection * MoveSpeed, _rb.linearVelocity.y);
         }
     }

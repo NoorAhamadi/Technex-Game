@@ -9,8 +9,8 @@ namespace Chunk.Player.Abilities
     /// </summary>
     public class RollAbility : MonoBehaviour
     {
-        private const float RollForce = 8f;
-        private const float MaxRollSpeed = 6f;
+        private const float RollForce = 5f;
+        private const float MaxRollSpeed = 8f;
 
         private Rigidbody2D _rb;
         private ChunkController _controller;

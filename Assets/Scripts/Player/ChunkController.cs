@@ -18,6 +18,7 @@ namespace Chunk.Player
         [SerializeField] private GameObject rollAbilityObject;
         [SerializeField] private GameObject moveAbilityObject;
         [SerializeField] private GameObject chunkPlacementObject;
+        [SerializeField] private GameObject grappleAbilityObject;
 
         [Header("Input")]
         [SerializeField] private InputActionAsset inputActions;
@@ -29,11 +30,13 @@ namespace Chunk.Player
         private RollAbility _rollAbility;
         private MovementAbility _moveAbility;
         private ChunkPlacementAbility _placementAbility;
+        private GrappleAbility _grappleAbility;
 
         private InputAction _moveAction;
         private InputAction _jumpAction;
         private InputAction _attackAction;
         private InputAction _spawnAction;
+        private InputAction _grappleAction;
 
         private Vector2 _moveInput;
 
@@ -46,6 +49,8 @@ namespace Chunk.Player
                 _moveAbility = moveAbilityObject.GetComponent<MovementAbility>();
             if (chunkPlacementObject != null)
                 _placementAbility = chunkPlacementObject.GetComponent<ChunkPlacementAbility>();
+            if (grappleAbilityObject != null)
+                _grappleAbility = grappleAbilityObject.GetComponent<GrappleAbility>();
 
             // Head is always unlocked at start.
             foreach (StageType stage in Enum.GetValues(typeof(StageType)))
@@ -55,10 +60,11 @@ namespace Chunk.Player
             // Bind input actions from asset.
             if (inputActions != null)
             {
-                _moveAction   = inputActions.FindAction("Player/Move",   throwIfNotFound: false);
-                _jumpAction   = inputActions.FindAction("Player/Jump",   throwIfNotFound: false);
-                _attackAction = inputActions.FindAction("Player/Attack", throwIfNotFound: false);
-                _spawnAction  = inputActions.FindAction("Player/Spawn",  throwIfNotFound: false);
+                _moveAction   = inputActions.FindAction("Player/Move",    throwIfNotFound: false);
+                _jumpAction   = inputActions.FindAction("Player/Jump",    throwIfNotFound: false);
+                _attackAction = inputActions.FindAction("Player/Attack",  throwIfNotFound: false);
+                _spawnAction  = inputActions.FindAction("Player/Spawn",   throwIfNotFound: false);
+                _grappleAction = inputActions.FindAction("Player/Grapple", throwIfNotFound: false);
             }
         }
 
@@ -66,16 +72,18 @@ namespace Chunk.Player
         {
             inputActions?.Enable();
 
-            if (_jumpAction   != null) _jumpAction.performed   += OnJump;
-            if (_attackAction != null) _attackAction.performed += OnAttack;
-            if (_spawnAction  != null) _spawnAction.performed  += OnPlace;
+            if (_jumpAction    != null) _jumpAction.performed    += OnJump;
+            if (_attackAction  != null) _attackAction.performed  += OnAttack;
+            if (_spawnAction   != null) _spawnAction.performed   += OnPlace;
+            if (_grappleAction != null) _grappleAction.performed += OnGrapple;
         }
 
         private void OnDisable()
         {
-            if (_jumpAction   != null) _jumpAction.performed   -= OnJump;
-            if (_attackAction != null) _attackAction.performed -= OnAttack;
-            if (_spawnAction  != null) _spawnAction.performed  -= OnPlace;
+            if (_jumpAction    != null) _jumpAction.performed    -= OnJump;
+            if (_attackAction  != null) _attackAction.performed  -= OnAttack;
+            if (_spawnAction   != null) _spawnAction.performed   -= OnPlace;
+            if (_grappleAction != null) _grappleAction.performed -= OnGrapple;
 
             inputActions?.Disable();
         }
@@ -131,6 +139,10 @@ namespace Chunk.Player
                     CachePlacementAbility();
                     break;
                 case StageType.ArmGrapple:
+                    grappleAbilityObject?.SetActive(true);
+                    if (_grappleAbility == null && grappleAbilityObject != null)
+                        _grappleAbility = grappleAbilityObject.GetComponent<GrappleAbility>();
+                    break;
                 case StageType.ArmBeam:
                 case StageType.ArmSaw:
                 case StageType.Legs:
@@ -154,7 +166,13 @@ namespace Chunk.Player
 
         private void OnAttack(InputAction.CallbackContext ctx)
         {
-            // Left click — reserved for future attack ability.
+            // Reserved for future attack ability.
+        }
+
+        private void OnGrapple(InputAction.CallbackContext ctx)
+        {
+            if (HasStage(StageType.ArmGrapple))
+                _grappleAbility?.UseGrapple();
         }
 
         private void OnPlace(InputAction.CallbackContext ctx)
